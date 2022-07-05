@@ -1,11 +1,13 @@
 package net.puffish.mclauncher;
 
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -215,7 +217,7 @@ public class Version{
 			str = str.replace("${version_name}", versionName);
 			str = str.replace("${game_directory}", gd.root().toAbsolutePath().toString());
 			str = str.replace("${assets_root}", gd.assets().toAbsolutePath().toString());
-			str = str.replace("${auth_uuid}", "00000000000000000000000000000000");
+			str = str.replace("${auth_uuid}", UUID.nameUUIDFromBytes(("OfflinePlayer:" + arguments.getUsername()).getBytes(StandardCharsets.UTF_8)).toString());
 			str = str.replace("${auth_access_token}", "00000000000000000000000000000000");
 			str = str.replace("${user_properties}", "{}");
 			str = str.replace("${user_type}", "mojang");
