@@ -26,6 +26,9 @@ public class Library{
 
 	public void downloadJars(DownloadHandler dh) throws Exception{
 		if(artifactJson != null){
+			if(artifactJson.getString("url").isBlank()) {
+				return;
+			}
 			dh.downloadToFile(new URL(artifactJson.getString("url")), gd.libraries().resolve(artifactJson.getString("path")));
 			return;
 		}
