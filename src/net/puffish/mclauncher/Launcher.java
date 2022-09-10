@@ -14,7 +14,9 @@ public class Launcher{
 	}
 
 	public void download(String versionName) throws Exception{
-		download(versionName, new DefaultDownloadHandler());
+		ParallelDownloadHandler pdh = new ParallelDownloadHandler();
+		download(versionName, pdh);
+		pdh.invokeAll();
 	}
 
 	public void download(String versionName, DownloadHandler dh) throws Exception{
