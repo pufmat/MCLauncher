@@ -1,0 +1,25 @@
+plugins {
+	id 'java-library'
+}
+
+sourceCompatibility = JavaVersion.VERSION_16
+targetCompatibility = JavaVersion.VERSION_16
+
+group 'net.puffish.mclauncher'
+version '1.0'
+
+repositories {
+	mavenCentral()
+}
+
+sourceSets {
+	main {
+		java {
+			srcDirs = ['src']
+		}
+	}
+}
+
+dependencies {
+	implementation 'org.json:json:20220320'
+}
