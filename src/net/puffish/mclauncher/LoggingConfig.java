@@ -1,8 +1,10 @@
 package net.puffish.mclauncher;
 
-import java.net.URL;
-
+import net.puffish.mclauncher.VariablesReplacer.Variable;
 import org.json.JSONObject;
+
+import java.net.URL;
+import java.util.List;
 
 public class LoggingConfig{
 	private GameDirectory gd;
@@ -22,7 +24,10 @@ public class LoggingConfig{
 		dh.downloadToFile(url, gd.assetsLogConfigs().resolve(id));
 	}
 
-	public String getArgument(){
-		return argument.replace("${path}", gd.assetsLogConfigs().resolve(id).toAbsolutePath().toString());
+	public List<String> getArgument(){
+		VariablesReplacer vr = new VariablesReplacer(
+			new Variable("${path}", gd.assetsLogConfigs().resolve(id).toAbsolutePath().toString())
+		);
+		return vr.replace(argument);
 	}
 }

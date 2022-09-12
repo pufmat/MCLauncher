@@ -1,11 +1,11 @@
 package net.puffish.mclauncher;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 public class VersionManifest{
 	private GameDirectory gd;

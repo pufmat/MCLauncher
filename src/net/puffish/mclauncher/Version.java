@@ -1,18 +1,15 @@
 package net.puffish.mclauncher;
 
+import net.puffish.mclauncher.VariablesReplacer.Variable;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 public class Version{
 	private GameDirectory gd;
@@ -185,57 +182,67 @@ public class Version{
 		List<Library> libraries = new ArrayList<Library>();
 		collectLibraries(libraries);
 
-		String librariesString = Stream.concat(libraries.stream().map(Library::getJarPath).filter(Objects::nonNull), Stream.of(getJarPath())).map(Path::toAbsolutePath).map(Path::toString).collect(Collectors.joining(os.getClasspathSeparator()));
+		String librariesString =
+				Stream.concat(
+								libraries.stream().map(Library::getJarPath).filter(Objects::nonNull),
+								Stream.of(getJarPath())
+						)
+						.map(Path::toAbsolutePath)
+						.map(Path::toString)
+						.collect(Collectors.joining(os.getClasspathSeparator()));
 
-		List<String> parts = new ArrayList<String>();
-		parts.add(javaPath.toAbsolutePath().toString());
+		List<String> command = new ArrayList<String>();
+		command.add(javaPath.toAbsolutePath().toString());
 		if(!arguments.getUserArguments().isEmpty()){
-			parts.add(arguments.getUserArguments());
+			command.add(arguments.getUserArguments());
 		}
 
 		LoggingConfig loggingConfig = getLoggingConfigRecursive();
 		if(loggingConfig != null){
-			parts.add(getLoggingConfigRecursive().getArgument());
+			command.addAll(getLoggingConfigRecursive().getArgument());
 		}
 
-		collectJvmArguments(parts);
+		collectJvmArguments(command);
 
-		if(!parts.stream().anyMatch(str -> str.contains("-Djava.library.path="))){
-			parts.add("-Djava.library.path=${natives_directory}");
+		if(!command.stream().anyMatch(str -> str.contains("-Djava.library.path="))){
+			command.add("-Djava.library.path=${natives_directory}");
 		}
 
-		if(!parts.stream().anyMatch(str -> str.contains("-cp"))){
-			parts.add("-cp ${classpath}");
+		if(!command.stream().anyMatch(str -> str.contains("-cp"))){
+			command.add("-cp");
+			command.add("${classpath}");
 		}
 
-		List<String> tmp = new ArrayList<String>();
-		collectGameArguments(tmp);
-		parts.addAll(tmp.stream().flatMap(str -> Arrays.stream(str.split(" "))).distinct().toList());
+		List<String> gameArguments = new ArrayList<String>();
+		collectGameArguments(gameArguments);
+		command.addAll(gameArguments.stream().flatMap(str -> Arrays.stream(str.split(" +"))).distinct().toList());
 
-		parts.replaceAll(str -> {
-			str = str.replace("${auth_player_name}", arguments.getUsername());
-			str = str.replace("${version_name}", versionName);
-			str = str.replace("${game_directory}", gd.root().toAbsolutePath().toString());
-			str = str.replace("${assets_root}", gd.assets().toAbsolutePath().toString());
-			str = str.replace("${auth_uuid}", UUID.nameUUIDFromBytes(("OfflinePlayer:" + arguments.getUsername()).getBytes(StandardCharsets.UTF_8)).toString());
-			str = str.replace("${auth_access_token}", "00000000000000000000000000000000");
-			str = str.replace("${user_properties}", "{}");
-			str = str.replace("${user_type}", "mojang");
-			str = str.replace("${version_type}", "release");
-			str = str.replace("${assets_index_name}", getAssetsIndexNameRecursive());
-			str = str.replace("${auth_session}", "00000000000000000000000000000000");
-			str = str.replace("${game_assets}", "resources");
-			str = str.replace("${classpath}", librariesString + " " + mainClass);
-			str = str.replace("${library_directory}", gd.libraries().toAbsolutePath().toString());
-			str = str.replace("${classpath_separator}", os.getClasspathSeparator());
-			str = str.replace("${natives_directory}", getNativesPathRecursive().toAbsolutePath().toString());
-			str = str.replace("${clientid}", "0000");
-			str = str.replace("${auth_xuid}", "0000");
-			return str;
-		});
+		VariablesReplacer vr = new VariablesReplacer(
+				new Variable("${auth_player_name}", arguments.getUsername()),
+				new Variable("${version_name}", versionName),
+				new Variable("${game_directory}", gd.root().toAbsolutePath().toString()),
+				new Variable("${assets_root}", gd.assets().toAbsolutePath().toString()),
+				new Variable("${auth_uuid}", UUID.nameUUIDFromBytes(("OfflinePlayer:" + arguments.getUsername()).getBytes(StandardCharsets.UTF_8)).toString()),
+				new Variable("${auth_access_token}", "00000000000000000000000000000000"),
+				new Variable("${user_properties}", "{}"),
+				new Variable("${user_type}", "mojang"),
+				new Variable("${version_type}", "release"),
+				new Variable("${assets_index_name}", getAssetsIndexNameRecursive()),
+				new Variable("${auth_session}", "00000000000000000000000000000000"),
+				new Variable("${game_assets}", "resources"),
+				new Variable("${classpath}", librariesString, mainClass),
+				new Variable("${library_directory}", gd.libraries().toAbsolutePath().toString()),
+				new Variable("${classpath_separator}", os.getClasspathSeparator()),
+				new Variable("${natives_directory}", getNativesPathRecursive().toAbsolutePath().toString()),
+				new Variable("${clientid}", "0000"),
+				new Variable("${auth_xuid}", "0000")
+		);
 
-		String command = parts.stream().collect(Collectors.joining(" "));
-
-		return new Command(command, gd.root());
+		return new Command(
+				command.stream()
+						.flatMap(str -> vr.replace(str).stream())
+						.toList(),
+				gd.root()
+		);
 	}
 }
