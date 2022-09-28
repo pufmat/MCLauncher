@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Command{
-	private List<String> command;
-	private Path directory;
+	private final List<String> command;
+	private final Path directory;
 
 	public Command(List<String> command, Path directory){
 		this.command = command;

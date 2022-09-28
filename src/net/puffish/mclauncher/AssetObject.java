@@ -1,36 +1,50 @@
 package net.puffish.mclauncher;
 
+import io.vavr.control.Either;
+import io.vavr.control.Option;
+import org.json.JSONObject;
+
 import java.net.URL;
 import java.nio.file.Path;
 
-import org.json.JSONObject;
-
 public class AssetObject{
-	private String hash;
-	private URL url;
+	private final String hash;
+	private final URL url;
 
-	public AssetObject(JSONObject assetJson) throws Exception{
-		hash = assetJson.getString("hash");
-		url = new URL("http://resources.download.minecraft.net/" + hash.substring(0, 2) + "/" + hash);
+	public static Option<AssetObject> tryMake(JSONObject assetJson){
+		try {
+			String hash = assetJson.getString("hash");
+			return Option.of(new AssetObject(
+					hash,
+					new URL("http://resources.download.minecraft.net/" + hash.substring(0, 2) + "/" + hash)
+			));
+		}catch (Exception e){
+			return Option.none();
+		}
 	}
 
-	public void download(GameDirectory gd, DownloadHandler dh) throws Exception{
-		dh.downloadToFile(url, gd.assetsObjects().resolve(hash.substring(0, 2)).resolve(hash));
+	private AssetObject(String hash, URL url) {
+		this.hash = hash;
+		this.url = url;
 	}
 
-	public void copyToVirtual(GameDirectory gd, DownloadHandler dh, String key) throws Exception{
+	public Either<Exception, Void> download(GameDirectory gd, DownloadHandler dh){
+		return dh.downloadToFile(url, gd.assetsObjects().resolve(hash.substring(0, 2)).resolve(hash));
+	}
+
+	public Either<Exception, Void> copyToVirtual(GameDirectory gd, DownloadHandler dh, String key){
 		Path path = gd.assetsVirtualLegacy().resolve(key.replaceFirst("minecraft/", ""));
 		if(!path.startsWith(gd.assetsVirtualLegacy())){
-			return;
+			return Either.right(null);
 		}
-		dh.copyFile(gd.assetsObjects().resolve(hash.substring(0, 2)).resolve(hash), path);
+		return dh.copyFile(gd.assetsObjects().resolve(hash.substring(0, 2)).resolve(hash), path);
 	}
 
-	public void copyToResources(GameDirectory gd, DownloadHandler dh, String key) throws Exception{
+	public Either<Exception, Void> copyToResources(GameDirectory gd, DownloadHandler dh, String key){
 		Path path = gd.resources().resolve(key.replaceFirst("minecraft/", ""));
 		if(!path.startsWith(gd.resources())){
-			return;
+			return Either.right(null);
 		}
-		dh.copyFile(gd.assetsObjects().resolve(hash.substring(0, 2)).resolve(hash), path);
+		return dh.copyFile(gd.assetsObjects().resolve(hash.substring(0, 2)).resolve(hash), path);
 	}
 }

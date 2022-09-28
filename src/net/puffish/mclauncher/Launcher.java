@@ -1,29 +1,30 @@
 package net.puffish.mclauncher;
 
-import java.nio.file.Path;
+import io.vavr.control.Either;
+import io.vavr.control.Option;
+import org.json.JSONObject;
+
+import java.net.URL;
 
 public class Launcher{
-	private VersionManifest vm;
+	private final GameDirectory gd;
+	private final OperationSystem os;
 
-	public Launcher(GameDirectory gd) throws Exception{
-		this(gd, OperationSystem.detect());
+	public Launcher(GameDirectory gd, OperationSystem os){
+		this.gd = gd;
+		this.os = os;
 	}
 
-	public Launcher(GameDirectory gd, OperationSystem os) throws Exception{
-		this.vm = new VersionManifest(gd, os);
+	public VersionManifest getVersionManifest(){
+		return new VersionManifest(gd, os, Option.none());
 	}
 
-	public void download(String versionName) throws Exception{
-		ParallelDownloadHandler pdh = new ParallelDownloadHandler();
-		download(versionName, pdh);
-		pdh.invokeAll();
-	}
-
-	public void download(String versionName, DownloadHandler dh) throws Exception{
-		vm.download(versionName, dh).download(dh);
-	}
-
-	public Command launch(String versionName, Arguments arguments, Path javaPath) throws Exception{
-		return vm.get(versionName).getCommand(arguments, javaPath);
+	public Either<Exception, VersionManifest> downloadVersionManifest(DownloadHandler dh){
+		try {
+			return dh.downloadToString(new URL("https://launchermeta.mojang.com/mc/game/version_manifest.json"))
+					.map(x -> new VersionManifest(gd, os, Option.of(new JSONObject(x))));
+		} catch (Exception e){
+			return Either.left(e);
+		}
 	}
 }

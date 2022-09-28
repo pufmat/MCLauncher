@@ -6,10 +6,10 @@ import java.util.List;
 public class VariablesReplacer {
 	public record Variable(String name, String... replacements){}
 
-	private List<Variable> variables;
+	private final List<Variable> variables;
 
-	public VariablesReplacer(Variable... variables) {
-		this.variables = List.of(variables);
+	public VariablesReplacer(List<Variable> variables) {
+		this.variables = variables;
 	}
 
 	public List<String> replace(String str){

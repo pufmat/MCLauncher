@@ -1,16 +1,18 @@
 package net.puffish.mclauncher;
 
+import io.vavr.control.Either;
+
 import java.net.URL;
 import java.nio.file.Path;
 
 public interface DownloadHandler{
-	public String downloadToString(URL url) throws Exception;
+	Either<Exception, String> downloadToString(URL url);
 
-	public String downloadToFileAndString(URL url, Path path) throws Exception;
+	Either<Exception, String> downloadToFileAndString(URL url, Path path);
 
-	public void downloadToFile(URL url, Path path) throws Exception;
+	Either<Exception, Void> downloadToFile(URL url, Path path);
 
-	public void copyFile(Path from, Path to) throws Exception;
+	Either<Exception, Void> copyFile(Path from, Path to);
 
-	public void extractJar(Path jarPath, Path directory) throws Exception;
+	Either<Exception, Void> extractJar(Path jarPath, Path directory);
 }

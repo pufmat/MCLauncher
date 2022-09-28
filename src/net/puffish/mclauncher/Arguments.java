@@ -1,8 +1,8 @@
 package net.puffish.mclauncher;
 
 public class Arguments{
-	private String username;
-	private String userArguments;
+	private final String username;
+	private final String userArguments;
 
 	public Arguments(String username){
 		this(username, "");

@@ -1,27 +1,29 @@
 package net.puffish.mclauncher;
 
+import io.vavr.control.Option;
+
 public enum OperationSystem{
 
 	WINDOWS("windows", ";"),
 	MACOS("osx", ":"),
 	LINUX("linux", ":");
 
-	public static OperationSystem detect(){
+	public static Option<OperationSystem> detect(){
 		String os = System.getProperty("os.name").toLowerCase();
 		if(os.contains("win")){
-			return WINDOWS;
+			return Option.of(WINDOWS);
 		}else if(os.contains("mac")){
-			return MACOS;
+			return Option.of(MACOS);
 		}else if(os.contains("nix") || os.contains("nux")){
-			return LINUX;
+			return Option.of(LINUX);
 		}
-		throw new IllegalStateException();
+		return Option.none();
 	}
 
-	private String name;
-	private String classpathSeparator;
+	private final String name;
+	private final String classpathSeparator;
 
-	private OperationSystem(String name, String classpathSeparator){
+	OperationSystem(String name, String classpathSeparator){
 		this.name = name;
 		this.classpathSeparator = classpathSeparator;
 	}

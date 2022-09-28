@@ -3,7 +3,7 @@ package net.puffish.mclauncher;
 import java.nio.file.Path;
 
 public class GameDirectory{
-	private Path path;
+	private final Path path;
 
 	public GameDirectory(Path path){
 		this.path = path;
@@ -43,9 +43,5 @@ public class GameDirectory{
 
 	public Path assetsLogConfigs(){
 		return path.resolve("assets").resolve("log_configs");
-	}
-
-	public Path launcherProfiles(String OS){
-		return path.resolve("launcher_profiles.json");
 	}
 }
