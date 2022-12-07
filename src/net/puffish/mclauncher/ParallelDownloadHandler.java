@@ -6,62 +6,88 @@ import io.vavr.control.Option;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public class ParallelDownloadHandler extends DefaultDownloadHandler{
-	protected final List<Supplier<Either<Exception, Void>>> parallelTasks = new ArrayList<>();
+public class ParallelDownloadHandler extends DefaultDownloadHandler {
+	protected final HashMap<Path, Supplier<Either<Exception, Void>>> parallelTasks = new HashMap<>();
 	protected final List<Supplier<Either<Exception, Void>>> serialTasks = new ArrayList<>();
 
 	public Either<Exception, Void> invokeAll() {
 		ExecutorService parallelExecutor = Executors.newCachedThreadPool();
 
-		var parallelFutures = parallelTasks.stream()
-				.map(task -> CompletableFuture.supplyAsync(task, parallelExecutor))
+		var latch = new CountDownLatch(1);
+		var countDown = new AtomicInteger(parallelTasks.size());
+
+		var parallelFutures = parallelTasks.values()
+				.stream()
+				.map(task -> parallelExecutor.submit(() -> {
+					var tmp = task.get();
+					if (tmp.isRight()) {
+						if (countDown.decrementAndGet() == 0) {
+							latch.countDown();
+						}
+					} else {
+						latch.countDown();
+					}
+					return tmp;
+				}))
 				.toList();
 
-		for (var future : parallelFutures) {
-			future.whenComplete((result, throwable) -> {
-				if (result.isLeft()) {
-					parallelFutures.forEach(f -> f.cancel(true));
-				}
-			});
+		try {
+			latch.await();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 
-		return Option.ofOptional(
-				parallelFutures.stream()
-						.map(CompletableFuture::join)
-						.filter(Either::isLeft)
-						.findAny()
-		).getOrElse(() -> {
-			for(var task : serialTasks){
-				var result = task.get();
-				if(result.isLeft()){
-					return result;
-				}
-			}
+		parallelExecutor.shutdownNow();
 
-			return Either.right(null);
-		});
+		return Option.ofOptional(
+						parallelFutures.stream()
+								.filter(Predicate.not(Future::isCancelled))
+								.map(future -> {
+									try {
+										return future.get();
+									} catch (Exception e) {
+										return Either.<Exception, Void>left(e);
+									}
+								})
+								.filter(Either::isLeft)
+								.findAny()
+				)
+				.getOrElse(() -> {
+					for (var task : serialTasks) {
+						var result = task.get();
+						if (result.isLeft()) {
+							return result;
+						}
+					}
+
+					return Either.right(null);
+				});
 	}
 
 	@Override
-	public Either<Exception, Void> downloadToFile(URL url, Path path){
-		parallelTasks.add(() -> super.downloadToFile(url, path));
+	public Either<Exception, Void> downloadToFile(URL url, Path path) {
+		parallelTasks.put(path, () -> super.downloadToFile(url, path));
 		return Either.right(null);
 	}
 
 	@Override
-	public Either<Exception, Void> copyFile(Path from, Path to){
+	public Either<Exception, Void> copyFile(Path from, Path to) {
 		serialTasks.add(() -> super.copyFile(from, to));
 		return Either.right(null);
 	}
 
 	@Override
-	public Either<Exception, Void> extractJar(Path jarPath, Path directory){
+	public Either<Exception, Void> extractJar(Path jarPath, Path directory) {
 		serialTasks.add(() -> super.extractJar(jarPath, directory));
 		return Either.right(null);
 	}
