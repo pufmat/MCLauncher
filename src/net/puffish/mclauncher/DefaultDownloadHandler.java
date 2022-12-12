@@ -15,32 +15,37 @@ public class DefaultDownloadHandler implements DownloadHandler {
 	@Override
 	public Either<Exception, String> downloadToString(URL url) {
 		try {
-			return Either.right(new String(url.openStream()
-					.readAllBytes()));
+			return Either.right(new String(url.openStream().readAllBytes()));
 		} catch (Exception e) {
-			return Either.left(e);
+			return Either.left(
+					new RuntimeException("An error occurred while downloading " + url.toString(), e)
+			);
 		}
 	}
 
 	@Override
 	public Either<Exception, String> downloadToFileAndString(URL url, Path path) {
 		try {
-			String content = new String(url.openStream()
-					.readAllBytes());
+			String content = new String(url.openStream().readAllBytes());
 			Files.createDirectories(path.getParent());
 			Files.writeString(path, content);
 			return Either.right(content);
 		} catch (Exception e) {
-			return Either.left(e);
+			return Either.left(
+					new RuntimeException("An error occurred while downloading " + url.toString(), e)
+			);
 		}
 	}
 
 	@Override
 	public Either<Exception, Void> downloadToFile(URL url, Path path) {
 		try {
-			return streamToFile(url.openStream(), path);
+			streamToFile(url.openStream(), path);
+			return Either.right(null);
 		} catch (Exception e) {
-			return Either.left(e);
+			return Either.left(
+					new RuntimeException("An error occurred while downloading " + url.toString(), e)
+			);
 		}
 	}
 
@@ -51,7 +56,9 @@ public class DefaultDownloadHandler implements DownloadHandler {
 			Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
 			return Either.right(null);
 		} catch (Exception e) {
-			return Either.left(e);
+			return Either.left(
+					new RuntimeException("An error occurred while copying file from " + from.toString() + " to " + to.toString(), e)
+			);
 		}
 	}
 
@@ -66,24 +73,19 @@ public class DefaultDownloadHandler implements DownloadHandler {
 				if (entry.isDirectory()) {
 					Files.createDirectories(path);
 				} else {
-					if (streamToFile(jar.getInputStream(entry), path) instanceof Either.Left<Exception, Void> left) {
-						return left;
-					}
+					streamToFile(jar.getInputStream(entry), path);
 				}
 			}
 			return Either.right(null);
 		} catch (Exception e) {
-			return Either.left(e);
+			return Either.left(
+					new RuntimeException("An error occurred while extracting jar " + jarPath.toString(), e)
+			);
 		}
 	}
 
-	private Either<Exception, Void> streamToFile(InputStream stream, Path to) {
-		try {
-			Files.createDirectories(to.getParent());
-			Files.copy(stream, to, StandardCopyOption.REPLACE_EXISTING);
-			return Either.right(null);
-		} catch (Exception e) {
-			return Either.left(e);
-		}
+	private void streamToFile(InputStream stream, Path to) throws Exception {
+		Files.createDirectories(to.getParent());
+		Files.copy(stream, to, StandardCopyOption.REPLACE_EXISTING);
 	}
 }
