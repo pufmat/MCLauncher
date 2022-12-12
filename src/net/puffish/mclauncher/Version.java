@@ -7,12 +7,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -253,16 +251,16 @@ public class Version{
 		command.addAll(gameArguments.stream().flatMap(str -> Arrays.stream(str.split(" +"))).distinct().toList());
 
 		List<Variable> variables = new ArrayList<>(List.of(
-				new Variable("${auth_player_name}", arguments.getUsername()),
+				new Variable("${auth_player_name}", arguments.getName()),
 				new Variable("${version_name}", versionName),
 				new Variable("${game_directory}", gd.root().toAbsolutePath().toString()),
 				new Variable("${assets_root}", gd.assets().toAbsolutePath().toString()),
-				new Variable("${auth_uuid}", UUID.nameUUIDFromBytes(("OfflinePlayer:" + arguments.getUsername()).getBytes(StandardCharsets.UTF_8)).toString()),
-				new Variable("${auth_access_token}", "00000000000000000000000000000000"),
+				new Variable("${auth_uuid}", arguments.getUUID()),
+				new Variable("${auth_access_token}", arguments.getAccessToken()),
 				new Variable("${user_properties}", "{}"),
 				new Variable("${user_type}", "mojang"),
 				new Variable("${version_type}", "release"),
-				new Variable("${auth_session}", "00000000000000000000000000000000"),
+				new Variable("${auth_session}", arguments.getSession()),
 				new Variable("${game_assets}", "resources"),
 				new Variable("${classpath}", librariesString, mainClass),
 				new Variable("${library_directory}", gd.libraries().toAbsolutePath().toString()),
