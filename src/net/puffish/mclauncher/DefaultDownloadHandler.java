@@ -4,18 +4,30 @@ import io.vavr.control.Either;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
+import java.util.concurrent.Executors;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public class DefaultDownloadHandler implements DownloadHandler {
+	private final HttpClient client = HttpClient.newBuilder()
+			.executor(Executors.newFixedThreadPool(
+					Math.max(1, Runtime.getRuntime().availableProcessors() - 1)
+			))
+			.build();
+
 	@Override
 	public Either<Exception, String> downloadToString(URL url) {
 		try {
-			return Either.right(new String(url.openStream().readAllBytes()));
+			var request = HttpRequest.newBuilder(url.toURI()).GET().build();
+			var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+			return Either.right(response.body());
 		} catch (Exception e) {
 			return Either.left(
 					new RuntimeException("An error occurred while downloading " + url.toString(), e)
@@ -26,7 +38,9 @@ public class DefaultDownloadHandler implements DownloadHandler {
 	@Override
 	public Either<Exception, String> downloadToFileAndString(URL url, Path path) {
 		try {
-			String content = new String(url.openStream().readAllBytes());
+			var request = HttpRequest.newBuilder(url.toURI()).GET().build();
+			var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+			String content = response.body();
 			Files.createDirectories(path.getParent());
 			Files.writeString(path, content);
 			return Either.right(content);
@@ -40,7 +54,9 @@ public class DefaultDownloadHandler implements DownloadHandler {
 	@Override
 	public Either<Exception, Void> downloadToFile(URL url, Path path) {
 		try {
-			streamToFile(url.openStream(), path);
+			var request = HttpRequest.newBuilder(url.toURI()).GET().build();
+			var response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+			streamToFile(response.body(), path);
 			return Either.right(null);
 		} catch (Exception e) {
 			return Either.left(
@@ -64,8 +80,7 @@ public class DefaultDownloadHandler implements DownloadHandler {
 
 	@Override
 	public Either<Exception, Void> extractJar(Path jarPath, Path directory) {
-		try {
-			JarFile jar = new JarFile(jarPath.toFile());
+		try (JarFile jar = new JarFile(jarPath.toFile())) {
 			Enumeration<JarEntry> enumeration = jar.entries();
 			while (enumeration.hasMoreElements()) {
 				JarEntry entry = enumeration.nextElement();

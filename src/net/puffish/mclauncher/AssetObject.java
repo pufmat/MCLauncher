@@ -16,7 +16,7 @@ public class AssetObject{
 			String hash = assetJson.getString("hash");
 			return Option.of(new AssetObject(
 					hash,
-					new URL("http://resources.download.minecraft.net/" + hash.substring(0, 2) + "/" + hash)
+					new URL("https://resources.download.minecraft.net/" + hash.substring(0, 2) + "/" + hash)
 			));
 		}catch (Exception e){
 			return Option.none();

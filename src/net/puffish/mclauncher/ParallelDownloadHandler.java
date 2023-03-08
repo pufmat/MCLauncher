@@ -21,7 +21,9 @@ public class ParallelDownloadHandler extends DefaultDownloadHandler {
 	protected final List<Supplier<Either<Exception, Void>>> serialTasks = new ArrayList<>();
 
 	public Either<Exception, Void> invokeAll() {
-		ExecutorService parallelExecutor = Executors.newCachedThreadPool();
+		ExecutorService parallelExecutor = Executors.newFixedThreadPool(
+				Math.max(1, Runtime.getRuntime().availableProcessors() - 1)
+		);
 
 		var latch = new CountDownLatch(1);
 		var countDown = new AtomicInteger(parallelTasks.size());
