@@ -16,9 +16,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public class ParallelDownloadHandler extends DefaultDownloadHandler {
+public class ParallelDownloadHandler implements DownloadHandler {
+	private final DownloadHandler dh;
+
 	protected final HashMap<Path, Supplier<Either<Exception, Void>>> parallelTasks = new HashMap<>();
 	protected final List<Supplier<Either<Exception, Void>>> serialTasks = new ArrayList<>();
+
+	public ParallelDownloadHandler() {
+		this(new DefaultDownloadHandler());
+	}
+
+	public ParallelDownloadHandler(DownloadHandler dh) {
+		this.dh = dh;
+	}
 
 	public Either<Exception, Void> invokeAll() {
 		ExecutorService parallelExecutor = Executors.newFixedThreadPool(
@@ -77,20 +87,30 @@ public class ParallelDownloadHandler extends DefaultDownloadHandler {
 	}
 
 	@Override
+	public Either<Exception, String> downloadToString(URL url) {
+		return dh.downloadToString(url);
+	}
+
+	@Override
+	public Either<Exception, String> downloadToFileAndString(URL url, Path path) {
+		return dh.downloadToFileAndString(url, path);
+	}
+
+	@Override
 	public Either<Exception, Void> downloadToFile(URL url, Path path) {
-		parallelTasks.put(path, () -> super.downloadToFile(url, path));
+		parallelTasks.put(path, () -> dh.downloadToFile(url, path));
 		return Either.right(null);
 	}
 
 	@Override
 	public Either<Exception, Void> copyFile(Path from, Path to) {
-		serialTasks.add(() -> super.copyFile(from, to));
+		serialTasks.add(() -> dh.copyFile(from, to));
 		return Either.right(null);
 	}
 
 	@Override
 	public Either<Exception, Void> extractJar(Path jarPath, Path directory) {
-		serialTasks.add(() -> super.extractJar(jarPath, directory));
+		serialTasks.add(() -> dh.extractJar(jarPath, directory));
 		return Either.right(null);
 	}
 }
