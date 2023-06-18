@@ -8,7 +8,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-public class OnlineAccount implements Account{
+public class OnlineAccount implements Account {
 	private final String name;
 	private final String uuid;
 	private final String accessToken;
@@ -19,8 +19,8 @@ public class OnlineAccount implements Account{
 		this.accessToken = accessToken;
 	}
 
-	public static Either<Exception, OnlineAccount> login(String accessToken){
-		try{
+	public static Either<Exception, OnlineAccount> login(String accessToken) {
+		try {
 
 			HttpClient client = HttpClient.newHttpClient();
 			HttpRequest request = HttpRequest.newBuilder(new URI("https://api.minecraftservices.com/minecraft/profile"))
@@ -34,7 +34,7 @@ public class OnlineAccount implements Account{
 			JSONObject responseJson = new JSONObject(response.body());
 
 			String error = responseJson.optString("errorMessage", null);
-			if(error != null){
+			if (error != null) {
 				return Either.left(new RuntimeException(error));
 			}
 
@@ -42,7 +42,7 @@ public class OnlineAccount implements Account{
 			String uuid = responseJson.getString("id");
 
 			return Either.right(new OnlineAccount(name, uuid, accessToken));
-		}catch (Exception e){
+		} catch (Exception e) {
 			return Either.left(e);
 		}
 	}

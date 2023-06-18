@@ -7,19 +7,19 @@ import org.json.JSONObject;
 import java.net.URL;
 import java.nio.file.Path;
 
-public class AssetsIndex{
+public class AssetsIndex {
 	private final GameDirectory gd;
 	private final String id;
 	private final URL url;
 
-	public static Either<Exception, AssetsIndex> tryMake(GameDirectory gd, JSONObject json){
-		try{
+	public static Either<Exception, AssetsIndex> tryMake(GameDirectory gd, JSONObject json) {
+		try {
 			return Either.right(new AssetsIndex(
 					gd,
 					json.getString("id"),
 					new URL(json.getString("url"))
 			));
-		}catch (Exception e){
+		} catch (Exception e) {
 			return Either.left(e);
 		}
 	}
@@ -30,7 +30,7 @@ public class AssetsIndex{
 		this.url = url;
 	}
 
-	public Either<Exception, Void> download(DownloadHandler dh){
+	public Either<Exception, Void> download(DownloadHandler dh) {
 		Path path = gd.assetsIndexes().resolve(id + ".json");
 		return dh.downloadToFileAndString(url, path).flatMap(x -> {
 			try {
@@ -58,13 +58,13 @@ public class AssetsIndex{
 				}
 
 				return Either.right(null);
-			}catch (Exception e){
+			} catch (Exception e) {
 				return Either.left(e);
 			}
 		});
 	}
 
-	public String getName(){
+	public String getName() {
 		return id;
 	}
 }

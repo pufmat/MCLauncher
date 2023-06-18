@@ -30,20 +30,20 @@ public class VersionManifest {
 
 	private Either<Exception, URL> findDownloadUrl(String versionName) {
 		return json.<Either<Exception, URL>>map(x -> {
-					try {
-						JSONArray versionsJson = x.getJSONArray("versions");
-						for (Object obj : versionsJson) {
-							if (obj instanceof JSONObject versionJson) {
-								if (versionJson.getString("id").equals(versionName)) {
-									return Either.right(new URL(versionJson.getString("url")));
-								}
-							}
+			try {
+				JSONArray versionsJson = x.getJSONArray("versions");
+				for (Object obj : versionsJson) {
+					if (obj instanceof JSONObject versionJson) {
+						if (versionJson.getString("id").equals(versionName)) {
+							return Either.right(new URL(versionJson.getString("url")));
 						}
-					} catch (Exception e) {
-						return Either.left(e);
 					}
-					return Either.left(new IllegalStateException("Version `" + versionName + "` does not exists!"));
-				}).getOrElse(() -> Either.left(new IllegalStateException("Missing version manifest!")));
+				}
+			} catch (Exception e) {
+				return Either.left(e);
+			}
+			return Either.left(new IllegalStateException("Version `" + versionName + "` does not exists!"));
+		}).getOrElse(() -> Either.left(new IllegalStateException("Missing version manifest!")));
 	}
 
 	private Either<Exception, Version> getVersionInfo(Path path, Function<String, Either<Exception, Version>> supplier) {

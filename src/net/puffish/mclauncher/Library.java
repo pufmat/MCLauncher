@@ -8,25 +8,25 @@ import org.json.JSONObject;
 import java.net.URL;
 import java.nio.file.Path;
 
-public class Library{
+public class Library {
 	private final GameDirectory gd;
 
 	private final JSONObject libraryJson;
 	private JSONObject artifactJson;
 	private JSONObject classifiersJson;
 
-	public Library(GameDirectory gd, JSONObject libraryJson){
+	public Library(GameDirectory gd, JSONObject libraryJson) {
 		this.gd = gd;
 		this.libraryJson = libraryJson;
 
 		JSONObject downloadsJson = libraryJson.optJSONObject("downloads");
-		if(downloadsJson != null){
+		if (downloadsJson != null) {
 			artifactJson = downloadsJson.optJSONObject("artifact");
 			classifiersJson = downloadsJson.optJSONObject("classifiers");
 		}
 	}
 
-	public Either<Exception, Void> downloadJars(DownloadHandler dh){
+	public Either<Exception, Void> downloadJars(DownloadHandler dh) {
 		try {
 			if (artifactJson != null) {
 				if (artifactJson.getString("url").isBlank()) {
@@ -58,7 +58,7 @@ public class Library{
 				if (path.startsWith(gd.libraries())) {
 					if (!path.toFile()
 							.exists()) {
-						if(dh.downloadToFile(new URL(url + jarPath), path) instanceof Either.Left<Exception, Void> left){
+						if (dh.downloadToFile(new URL(url + jarPath), path) instanceof Either.Left<Exception, Void> left) {
 							return left;
 						}
 					}
@@ -66,12 +66,12 @@ public class Library{
 			}
 
 			return Either.right(null);
-		}catch (Exception e){
+		} catch (Exception e) {
 			return Either.left(e);
 		}
 	}
 
-	public Either<Exception, Void> downloadNatives(DownloadHandler dh, OperationSystem os, String versionName){
+	public Either<Exception, Void> downloadNatives(DownloadHandler dh, OperationSystem os, String versionName) {
 		try {
 			if (classifiersJson == null) {
 				return Either.right(null);
@@ -91,7 +91,7 @@ public class Library{
 
 			Path jarPath = gd.libraries().resolve(nameJson.getString("path"));
 
-			if(dh.downloadToFile(new URL(nameJson.getString("url")), jarPath) instanceof Either.Left<Exception, Void> left){
+			if (dh.downloadToFile(new URL(nameJson.getString("url")), jarPath) instanceof Either.Left<Exception, Void> left) {
 				return left;
 			}
 
@@ -100,32 +100,32 @@ public class Library{
 					.resolve("natives");
 
 			return dh.extractJar(jarPath, natives);
-		}catch (Exception e){
+		} catch (Exception e) {
 			return Either.left(e);
 		}
 	}
 
-	public boolean matches(OperationSystem os){
+	public boolean matches(OperationSystem os) {
 		JSONArray rulesJson = libraryJson.optJSONArray("rules");
-		if(rulesJson == null){
+		if (rulesJson == null) {
 			return true;
 		}
 
-		for(Object obj : rulesJson){
-			if(obj instanceof JSONObject ruleJson){
+		for (Object obj : rulesJson) {
+			if (obj instanceof JSONObject ruleJson) {
 				JSONObject osJson = ruleJson.optJSONObject("os");
-				if(osJson != null){
-					if(osJson.getString("name").equals(os.getName())){
+				if (osJson != null) {
+					if (osJson.getString("name").equals(os.getName())) {
 						return ruleJson.getString("action").equals("allow");
 					}
 				}
 			}
 		}
 
-		for(Object obj : rulesJson){
-			if(obj instanceof JSONObject ruleJson){
+		for (Object obj : rulesJson) {
+			if (obj instanceof JSONObject ruleJson) {
 				JSONObject osJson = ruleJson.optJSONObject("os");
-				if(osJson == null){
+				if (osJson == null) {
 					return ruleJson.getString("action").equals("allow");
 				}
 			}
@@ -134,8 +134,8 @@ public class Library{
 		return false;
 	}
 
-	public Option<Path> getJarPath(){
-		if(artifactJson != null){
+	public Option<Path> getJarPath() {
+		if (artifactJson != null) {
 			return Option.of(
 					gd.libraries().resolve(artifactJson.getString("path"))
 			);
@@ -145,7 +145,7 @@ public class Library{
 		String[] parts = name.split(":");
 		String jarPath = parts[0].replace('.', '/') + "/" + parts[1] + "/" + parts[2] + "/" + parts[1] + "-" + parts[2] + ".jar";
 		Path path = gd.libraries().resolve(jarPath);
-		if(!path.startsWith(gd.libraries())){
+		if (!path.startsWith(gd.libraries())) {
 			return Option.none();
 		}
 		return Option.of(path);

@@ -63,7 +63,7 @@ public class ParallelDownloadHandler implements DownloadHandler {
 			return runCount;
 		}
 
-		public Either<Exception, Void> run(){
+		public Either<Exception, Void> run() {
 			runCount++;
 			return supplier.get();
 		}
@@ -86,7 +86,7 @@ public class ParallelDownloadHandler implements DownloadHandler {
 		}
 
 		public Either<Exception, Void> invokeAll() {
-			for(var task : tasks){
+			for (var task : tasks) {
 				runTask(task, 0);
 			}
 
@@ -98,23 +98,23 @@ public class ParallelDownloadHandler implements DownloadHandler {
 
 			executor.shutdownNow();
 
-			if(exception == null){
+			if (exception == null) {
 				return Either.right(null);
 			} else {
 				return Either.left(new RuntimeException("Too many retries", exception));
 			}
 		}
 
-		private void runTask(Task task, long delay){
+		private void runTask(Task task, long delay) {
 			executor.schedule(() -> {
-				if(stopped.get()){
+				if (stopped.get()) {
 					latch.countDown();
 					return;
 				}
 				var result = task.run();
-				if(result.isRight()){
+				if (result.isRight()) {
 					latch.countDown();
-				}else if(task.getRunCount() > retries){
+				} else if (task.getRunCount() > retries) {
 					exception = result.getLeft();
 					stopped.set(true);
 					latch.countDown();

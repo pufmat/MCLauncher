@@ -15,7 +15,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Version{
+public class Version {
 	private final GameDirectory gd;
 	private final OperationSystem os;
 
@@ -34,7 +34,7 @@ public class Version{
 
 	private final Option<URL> clientUrl;
 
-	public static Either<Exception, Version> tryMake(GameDirectory gd, OperationSystem os, JSONObject rootJson, Function<String, Either<Exception, Version>> versionFunction){
+	public static Either<Exception, Version> tryMake(GameDirectory gd, OperationSystem os, JSONObject rootJson, Function<String, Either<Exception, Version>> versionFunction) {
 		List<Library> libraries = new ArrayList<>();
 		List<String> gameArguments = new ArrayList<>();
 		List<String> jvmArguments = new ArrayList<>();
@@ -78,7 +78,7 @@ public class Version{
 		String inheritsFromName = rootJson.optString("inheritsFrom", null);
 		if (inheritsFromName != null) {
 			inheritsFrom = versionFunction.apply(inheritsFromName);
-			if(inheritsFrom instanceof Either.Left<Exception, Version> left){
+			if (inheritsFrom instanceof Either.Left<Exception, Version> left) {
 				return left;
 			}
 		}
@@ -87,9 +87,9 @@ public class Version{
 		JSONObject downloadsJson = rootJson.optJSONObject("downloads");
 		if (downloadsJson != null) {
 			JSONObject clientJson = downloadsJson.getJSONObject("client");
-			try{
+			try {
 				clientUrl = Option.of(new URL(clientJson.getString("url")));
-			}catch (Exception e){
+			} catch (Exception e) {
 				return Either.left(e);
 			}
 		}
@@ -98,7 +98,7 @@ public class Version{
 		JSONObject assetIndexJson = rootJson.optJSONObject("assetIndex");
 		if (assetIndexJson != null) {
 			assets = AssetsIndex.tryMake(gd, assetIndexJson);
-			if(assets instanceof Either.Left<Exception, AssetsIndex> left){
+			if (assets instanceof Either.Left<Exception, AssetsIndex> left) {
 				return Either.left(left.getLeft());
 			}
 		}
@@ -109,7 +109,7 @@ public class Version{
 			JSONObject clientJson = loggingJson.optJSONObject("client");
 			if (clientJson != null) {
 				loggingConfig = LoggingConfig.tryMake(gd, clientJson);
-				if(loggingConfig instanceof Either.Left<Exception, LoggingConfig> left){
+				if (loggingConfig instanceof Either.Left<Exception, LoggingConfig> left) {
 					return Either.left(left.getLeft());
 				}
 			}
@@ -144,77 +144,77 @@ public class Version{
 		this.clientUrl = clientUrl;
 	}
 
-	public Either<Exception, Void> downloadFiles(DownloadHandler dh){
-		if(assets.map(x -> x.download(dh)).getOrElse(() -> Either.right(null)) instanceof Either.Left<Exception, Void> left){
+	public Either<Exception, Void> downloadFiles(DownloadHandler dh) {
+		if (assets.map(x -> x.download(dh)).getOrElse(() -> Either.right(null)) instanceof Either.Left<Exception, Void> left) {
 			return left;
 		}
 
-		for(Library library : libraries){
-			if(library.downloadJars(dh) instanceof Either.Left<Exception, Void> left){
+		for (Library library : libraries) {
+			if (library.downloadJars(dh) instanceof Either.Left<Exception, Void> left) {
 				return left;
 			}
-			if(library.downloadNatives(dh, os, versionName) instanceof Either.Left<Exception, Void> left){
+			if (library.downloadNatives(dh, os, versionName) instanceof Either.Left<Exception, Void> left) {
 				return left;
 			}
 		}
 
-		if(loggingConfig.map(x -> x.download(dh)).getOrElse(() -> Either.right(null)) instanceof Either.Left<Exception, Void> left){
+		if (loggingConfig.map(x -> x.download(dh)).getOrElse(() -> Either.right(null)) instanceof Either.Left<Exception, Void> left) {
 			return left;
 		}
 
-		if(clientUrl.map(x -> dh.downloadToFile(x, gd.versions().resolve(versionName).resolve(versionName + ".jar"))).getOrElse(() -> Either.right(null)) instanceof Either.Left<Exception, Void> left){
+		if (clientUrl.map(x -> dh.downloadToFile(x, gd.versions().resolve(versionName).resolve(versionName + ".jar"))).getOrElse(() -> Either.right(null)) instanceof Either.Left<Exception, Void> left) {
 			return left;
 		}
-		if(inheritsFrom.map(x -> x.downloadFiles(dh).flatMap(y -> dh.copyFile(getJarPathRecursive(), getJarPath()))).getOrElse(() -> Either.right(null)) instanceof Either.Left<Exception, Void> left){
+		if (inheritsFrom.map(x -> x.downloadFiles(dh).flatMap(y -> dh.copyFile(getJarPathRecursive(), getJarPath()))).getOrElse(() -> Either.right(null)) instanceof Either.Left<Exception, Void> left) {
 			return left;
 		}
 
 		return Either.right(null);
 	}
 
-	private void collectJvmArguments(List<String> parts){
+	private void collectJvmArguments(List<String> parts) {
 		parts.addAll(jvmArguments);
 
 		inheritsFrom.peek(x -> x.collectJvmArguments(parts));
 	}
 
-	private void collectGameArguments(List<String> parts){
+	private void collectGameArguments(List<String> parts) {
 		parts.addAll(gameArguments);
 
 		inheritsFrom.peek(x -> x.collectGameArguments(parts));
 	}
 
-	private void collectLibraries(List<Library> libraries){
+	private void collectLibraries(List<Library> libraries) {
 		libraries.addAll(this.libraries);
 
 		inheritsFrom.peek(x -> x.collectLibraries(libraries));
 	}
 
-	private Option<String> getAssetsIndexNameRecursive(){
+	private Option<String> getAssetsIndexNameRecursive() {
 		return inheritsFrom.map(Version::getAssetsIndexNameRecursive).getOrElse(() -> assets.map(AssetsIndex::getName));
 	}
 
-	private Path getNativesPathRecursive(){
+	private Path getNativesPathRecursive() {
 		return inheritsFrom.map(Version::getNativesPathRecursive).getOrElse(this::getNativesPath);
 	}
 
-	private Path getNativesPath(){
+	private Path getNativesPath() {
 		return gd.versions().resolve(versionName).resolve("natives");
 	}
 
-	private Option<LoggingConfig> getLoggingConfigRecursive(){
+	private Option<LoggingConfig> getLoggingConfigRecursive() {
 		return inheritsFrom.map(Version::getLoggingConfigRecursive).getOrElse(loggingConfig);
 	}
 
-	private Path getJarPathRecursive(){
+	private Path getJarPathRecursive() {
 		return inheritsFrom.map(Version::getJarPathRecursive).getOrElse(this::getJarPath);
 	}
 
-	private Path getJarPath(){
+	private Path getJarPath() {
 		return gd.versions().resolve(versionName).resolve(versionName + ".jar");
 	}
 
-	public Command getLaunchCommand(Arguments arguments, Path javaPath){
+	public Command getLaunchCommand(Arguments arguments, Path javaPath) {
 		List<Library> libraries = new ArrayList<>();
 		collectLibraries(libraries);
 
@@ -229,7 +229,7 @@ public class Version{
 
 		List<String> command = new ArrayList<>();
 		command.add(javaPath.toAbsolutePath().toString());
-		if(!arguments.getUserArguments().isEmpty()){
+		if (!arguments.getUserArguments().isEmpty()) {
 			command.add(arguments.getUserArguments());
 		}
 
@@ -237,11 +237,11 @@ public class Version{
 
 		collectJvmArguments(command);
 
-		if(command.stream().noneMatch(str -> str.contains("-Djava.library.path="))){
+		if (command.stream().noneMatch(str -> str.contains("-Djava.library.path="))) {
 			command.add("-Djava.library.path=${natives_directory}");
 		}
 
-		if(command.stream().noneMatch(str -> str.contains("-cp"))){
+		if (command.stream().noneMatch(str -> str.contains("-cp"))) {
 			command.add("-cp");
 			command.add("${classpath}");
 		}

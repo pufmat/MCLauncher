@@ -5,7 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class VariablesReplacer {
-	public record Variable(String name, String... replacements) {}
+	public record Variable(String name, String... replacements) {
+	}
 
 	private final List<Variable> variables;
 

@@ -7,14 +7,14 @@ import org.json.JSONObject;
 import java.net.URL;
 import java.util.List;
 
-public class LoggingConfig{
+public class LoggingConfig {
 	private final GameDirectory gd;
 	private final URL url;
 	private final String id;
 	private final String argument;
 
-	public static Either<Exception, LoggingConfig> tryMake(GameDirectory gd, JSONObject client){
-		try{
+	public static Either<Exception, LoggingConfig> tryMake(GameDirectory gd, JSONObject client) {
+		try {
 			JSONObject file = client.getJSONObject("file");
 			return Either.right(new LoggingConfig(
 					gd,
@@ -22,7 +22,7 @@ public class LoggingConfig{
 					file.getString("id"),
 					client.getString("argument")
 			));
-		}catch (Exception e){
+		} catch (Exception e) {
 			return Either.left(e);
 		}
 	}
@@ -34,13 +34,13 @@ public class LoggingConfig{
 		this.argument = argument;
 	}
 
-	public Either<Exception, Void> download(DownloadHandler dh){
+	public Either<Exception, Void> download(DownloadHandler dh) {
 		return dh.downloadToFile(url, gd.assetsLogConfigs().resolve(id));
 	}
 
-	public List<String> getArgument(){
+	public List<String> getArgument() {
 		VariablesReplacer vr = new VariablesReplacer(List.of(
-			new Variable("${path}", gd.assetsLogConfigs().resolve(id).toAbsolutePath().toString())
+				new Variable("${path}", gd.assetsLogConfigs().resolve(id).toAbsolutePath().toString())
 		));
 		return vr.replace(argument);
 	}

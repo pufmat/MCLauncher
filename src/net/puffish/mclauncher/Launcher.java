@@ -6,24 +6,24 @@ import org.json.JSONObject;
 
 import java.net.URL;
 
-public class Launcher{
+public class Launcher {
 	private final GameDirectory gd;
 	private final OperationSystem os;
 
-	public Launcher(GameDirectory gd, OperationSystem os){
+	public Launcher(GameDirectory gd, OperationSystem os) {
 		this.gd = gd;
 		this.os = os;
 	}
 
-	public VersionManifest getVersionManifest(){
+	public VersionManifest getVersionManifest() {
 		return new VersionManifest(gd, os, Option.none());
 	}
 
-	public Either<Exception, VersionManifest> downloadVersionManifest(DownloadHandler dh){
+	public Either<Exception, VersionManifest> downloadVersionManifest(DownloadHandler dh) {
 		try {
 			return dh.downloadToString(new URL("https://launchermeta.mojang.com/mc/game/version_manifest.json"))
 					.map(x -> new VersionManifest(gd, os, Option.of(new JSONObject(x))));
-		} catch (Exception e){
+		} catch (Exception e) {
 			return Either.left(e);
 		}
 	}

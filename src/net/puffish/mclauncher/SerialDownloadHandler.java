@@ -23,7 +23,7 @@ public class SerialDownloadHandler implements DownloadHandler {
 		this.client = client;
 	}
 
-	public SerialDownloadHandler(){
+	public SerialDownloadHandler() {
 		this(HttpClient.newBuilder()
 				.connectTimeout(Duration.ofSeconds(60))
 				.build()
